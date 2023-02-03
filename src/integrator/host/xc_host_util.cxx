@@ -3,6 +3,7 @@
 #include "host_weights.hpp"
 #include "host_collocation.hpp"
 #include "host_zmat.hpp"
+#include "host_mmat.hpp"
 #include "integrator_common.hpp"
 #include "blas.hpp"
 #include "util.hpp"
@@ -60,11 +61,16 @@ void process_batches_host_replicated_p(
     F* den_eval   = host_data.den_scr.data();
     F* nbe_scr    = host_data.nbe_scr.data();
     F* zmat       = host_data.zmat.data();
+    F* mmat       = host_data.mmat.data();
 
     F* eps        = host_data.eps.data();
     F* gamma      = host_data.gamma.data();
+    F* tau        = host_data.tau.data();
+    F* lapl       = host_data.lapl.data();
     F* vrho       = host_data.vrho.data();
     F* vgamma     = host_data.vgamma.data();
+    F* vlapl      = host_data.vlapl.data();
+    F* vtau       = host_data.vtau.data();
 
     F* dbasis_x_eval = nullptr;
     F* dbasis_y_eval = nullptr;
@@ -73,6 +79,9 @@ void process_batches_host_replicated_p(
     F* dden_y_eval = nullptr;
     F* dden_z_eval = nullptr;
 
+    F* mmat_y = nullptr;
+    F* mmat_z = nullptr;
+
     if( n_deriv > 0 ) {
       dbasis_x_eval = basis_eval    + npts * nbe;
       dbasis_y_eval = dbasis_x_eval + npts * nbe;
@@ -80,6 +89,8 @@ void process_batches_host_replicated_p(
       dden_x_eval   = den_eval    + npts;
       dden_y_eval   = dden_x_eval + npts;
       dden_z_eval   = dden_y_eval + npts;
+      mmat_y        = mmat   + nqpts * nbe;
+      mmat_z        = mmat_y + nqpts * nbe;
     }
 
 
@@ -106,8 +117,17 @@ void process_batches_host_replicated_p(
     // Z = P * BF
     GauXC::blas::gemm( 'N', 'N', nbe, npts, nbe, 1., den_ptr_use, nbe,
                        basis_eval, nbe, 0., zmat, nbe );
-    
 
+    // M = P * dBF
+    if( func.is_mgga() ) {
+      GauXC::blas:gemm( 'N', 'N', nbe, npts, nbe, 1., den_ptr_use, nbe,
+  	                 dbasis_x_eval, nbe, 0., mmat, nbe );
+      GauXC::blas:gemm( 'N', 'N', nbe, npts, nbe, 1., den_ptr_use, nbe,
+  	                 dbasis_y_eval, nbe, 0., mmat_y, nbe );
+      GauXC::blas:gemm( 'N', 'N', nbe, npts, nbe, 1., den_ptr_use, nbe,
+  	                 dbasis_z_eval, nbe, 0., mmat_z, nbe );
+    }
+    
     // Evaluate the density 
     for( int32_t i = 0; i < npts; ++i ) {
 
@@ -132,10 +152,21 @@ void process_batches_host_replicated_p(
         gamma[i] = dx*dx + dy*dy + dz*dz;
       }
 
+      if( func.is_mgga() ) {
+	F tau_ =
+	  GauXC::blas::dot( nbe, dbasis_x_eval + ioff, 1, mmat   + ioff, 1 ) +
+	  GauXC::blas::dot( nbe, dbasis_y_eval + ioff, 1, mmat_x + ioff, 1 ) +
+	  GauXC::blas::dot( nbe, dbasis_y_eval + ioff, 1, mmat_y + ioff, 1 );
+
+        tau[i] = tau_;
+      }
+
     }
 
 
     // Evaluate XC functional
+    if( func.is_mgga() )
+      func.eval_exc_vxc( npts, den_eval, gamma, lapl, tau, eps, vrho, vgamma, vlapl, vtau);
     if( func.is_gga() )
       func.eval_exc_vxc( npts, den_eval, gamma, eps, vrho, vgamma );
     else
@@ -151,7 +182,8 @@ void process_batches_host_replicated_p(
     if( func.is_gga() )
       for( int32_t i = 0; i < npts; ++i ) vgamma[i] *= weights[i];
     
-
+    if( func.is_mgga() )
+      for ( int32_t i = 0; i < npts; ++i ) vtau[i] *= weights[i];
 
     // Scalar integrations
     if( n_el )
@@ -161,7 +193,11 @@ void process_batches_host_replicated_p(
     
 
     // Assemble Z
-    if( func.is_gga() )
+    if( func.is_mgga() )
+      zmat_gga_host(  npts, nbe, vrho, vgamma, basis_eval, dbasis_x_eval,
+	              dbasis_y_eval, dbasis_z_eval, dden_x_eval, dden_y_eval,
+		      dden_z_eval, zmat );
+    else if( func.is_gga() )
       zmat_gga_host( npts, nbe, vrho, vgamma, basis_eval, dbasis_x_eval,
                      dbasis_y_eval, dbasis_z_eval, dden_x_eval, dden_y_eval,
                      dden_z_eval, zmat ); 
@@ -173,6 +209,10 @@ void process_batches_host_replicated_p(
     // Update VXC XXX: Only LT
     GauXC::blas::syr2k( 'L', 'N', nbe, npts, F(1.), basis_eval,
                         nbe, zmat, nbe, F(0.), nbe_scr, nbe );
+
+    if( func.is_mgga() )
+      mmat_mgga_host( npts, nbe, vtau, dbasis_x_eval, dbasis_y_eval, dbasis_z_eval,
+	              mmat, nbe_scr );
 
 
     detail::inc_by_submat( nbf, nbf, nbe, nbe, VXC, nbf, nbe_scr, nbe,
