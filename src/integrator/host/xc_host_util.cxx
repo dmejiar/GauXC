@@ -212,7 +212,7 @@ void process_batches_host_replicated_p(
 
     if( func.is_mgga() )
       mmat_mgga_host( npts, nbe, vtau, dbasis_x_eval, dbasis_y_eval, dbasis_z_eval,
-	              mmat, nbe_scr );
+	              mmat, mmat_y, mmat_z, nbe_scr );
 
 
     detail::inc_by_submat( nbf, nbf, nbe, nbe, VXC, nbf, nbe_scr, nbe,
