@@ -89,8 +89,8 @@ void process_batches_host_replicated_p(
       dden_x_eval   = den_eval    + npts;
       dden_y_eval   = dden_x_eval + npts;
       dden_z_eval   = dden_y_eval + npts;
-      mmat_y        = mmat   + nqpts * nbe;
-      mmat_z        = mmat_y + nqpts * nbe;
+      mmat_y        = mmat   + npts * nbe;
+      mmat_z        = mmat_y + npts * nbe;
     }
 
 
@@ -120,11 +120,11 @@ void process_batches_host_replicated_p(
 
     // M = P * dBF
     if( func.is_mgga() ) {
-      GauXC::blas:gemm( 'N', 'N', nbe, npts, nbe, 1., den_ptr_use, nbe,
+      GauXC::blas::gemm( 'N', 'N', nbe, npts, nbe, 1., den_ptr_use, nbe,
   	                 dbasis_x_eval, nbe, 0., mmat, nbe );
-      GauXC::blas:gemm( 'N', 'N', nbe, npts, nbe, 1., den_ptr_use, nbe,
+      GauXC::blas::gemm( 'N', 'N', nbe, npts, nbe, 1., den_ptr_use, nbe,
   	                 dbasis_y_eval, nbe, 0., mmat_y, nbe );
-      GauXC::blas:gemm( 'N', 'N', nbe, npts, nbe, 1., den_ptr_use, nbe,
+      GauXC::blas::gemm( 'N', 'N', nbe, npts, nbe, 1., den_ptr_use, nbe,
   	                 dbasis_z_eval, nbe, 0., mmat_z, nbe );
     }
     
@@ -155,8 +155,8 @@ void process_batches_host_replicated_p(
       if( func.is_mgga() ) {
 	F tau_ =
 	  GauXC::blas::dot( nbe, dbasis_x_eval + ioff, 1, mmat   + ioff, 1 ) +
-	  GauXC::blas::dot( nbe, dbasis_y_eval + ioff, 1, mmat_x + ioff, 1 ) +
-	  GauXC::blas::dot( nbe, dbasis_y_eval + ioff, 1, mmat_y + ioff, 1 );
+	  GauXC::blas::dot( nbe, dbasis_y_eval + ioff, 1, mmat_y + ioff, 1 ) +
+	  GauXC::blas::dot( nbe, dbasis_y_eval + ioff, 1, mmat_z + ioff, 1 );
 
         tau[i] = tau_;
       }

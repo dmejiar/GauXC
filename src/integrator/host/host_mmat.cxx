@@ -1,4 +1,4 @@
-#include "host_zmat.hpp"
+#include "host_mmat.hpp"
 #include "blas.hpp"
 
 namespace GauXC  {
@@ -37,12 +37,11 @@ void mmat_mgga_host( int32_t   npts,
   }
 
   GauXC::blas::syr2k( 'L', 'N', nbf, npts, F(1.), dbasis_x, nbf,
-                       nbf, mmat_x, nbf, F(1.), nbe_scr, nbf );
+                       mmat_x, nbf, F(1.), nbe_scr, nbf );
   GauXC::blas::syr2k( 'L', 'N', nbf, npts, F(1.), dbasis_y, nbf,
-                       nbf, mmat_y, nbf, F(1.), nbe_scr, nbf );
+                       mmat_y, nbf, F(1.), nbe_scr, nbf );
   GauXC::blas::syr2k( 'L', 'N', nbf, npts, F(1.), dbasis_z, nbf,
-                       nbf, mmat_z, nbf, F(1.), nbe_scr, nbf );
-  }
+                       mmat_z, nbf, F(1.), nbe_scr, nbf );
 }
 
 template
@@ -69,3 +68,5 @@ void mmat_mgga_host( int32_t    npts,
 		     double*        mmat_z,
 		     double*        nbe_scr );
 
+}
+}
