@@ -55,7 +55,7 @@ typename DefaultXCHostIntegrator<MatrixType>::exc_vxc_type
   size_t max_nbe        = this->load_balancer_->max_nbe();
   size_t max_npts_x_nbe = this->load_balancer_->max_npts_x_nbe();
 
-  size_t n_deriv = this->func_->is_gga() ? 1 : 0;
+  size_t n_deriv = this->func_->is_gga() ? 1 : this->func_->is_mgga() ? 1 : 0;
 
   // Allocate Memory
   host_data_ = std::make_shared<XCHostData<value_type>>( 

@@ -156,7 +156,7 @@ void process_batches_host_replicated_p(
 	F tau_ =
 	  GauXC::blas::dot( nbe, dbasis_x_eval + ioff, 1, mmat   + ioff, 1 ) +
 	  GauXC::blas::dot( nbe, dbasis_y_eval + ioff, 1, mmat_y + ioff, 1 ) +
-	  GauXC::blas::dot( nbe, dbasis_y_eval + ioff, 1, mmat_z + ioff, 1 );
+	  GauXC::blas::dot( nbe, dbasis_z_eval + ioff, 1, mmat_z + ioff, 1 );
 
         tau[i] = tau_;
       }
@@ -165,12 +165,15 @@ void process_batches_host_replicated_p(
 
 
     // Evaluate XC functional
-    if( func.is_mgga() )
-      func.eval_exc_vxc( npts, den_eval, gamma, lapl, tau, eps, vrho, vgamma, vlapl, vtau);
-    if( func.is_gga() )
+    if( func.is_mgga() ) {
+      func.eval_exc_vxc( npts, den_eval, gamma, lapl, tau, eps, vrho, vgamma, vlapl, vtau); 
+    }
+    else if( func.is_gga() ) {
       func.eval_exc_vxc( npts, den_eval, gamma, eps, vrho, vgamma );
-    else
+    }
+    else {
       func.eval_exc_vxc( npts, den_eval, eps, vrho );
+    }
 
 
     // Factor weights into XC results
@@ -182,8 +185,10 @@ void process_batches_host_replicated_p(
     if( func.is_gga() )
       for( int32_t i = 0; i < npts; ++i ) vgamma[i] *= weights[i];
     
-    if( func.is_mgga() )
+    if( func.is_mgga() ) {
+      for( int32_t i = 0; i < npts; ++i ) vgamma[i] *= weights[i];
       for ( int32_t i = 0; i < npts; ++i ) vtau[i] *= weights[i];
+    }
 
     // Scalar integrations
     if( n_el )
