@@ -39,6 +39,7 @@ public:
 
 
 
+
 template <typename MatrixType>
 typename DefaultXCHostIntegrator<MatrixType>::exc_vxc_type 
   DefaultXCHostIntegrator<MatrixType>::eval_exc_vxc_( const MatrixType& P ) {

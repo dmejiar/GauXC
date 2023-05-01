@@ -63,12 +63,5 @@ const util::Timer& XCIntegrator<MatrixType>::get_timings() const {
   if( not pimpl_ ) throw std::runtime_error("Not Initialized");
 
   return pimpl_->get_timings();
-};
-
-template <typename MatrixType>
-void XCIntegrator<MatrixType>::set_ext_params( std::vector<double>& params ) {
-  if( not pimpl_ ) throw std::runtime_error("Not Initialized");
-  pimpl_->set_ext_params( params );
 }
-
 }

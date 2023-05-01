@@ -1,7 +1,6 @@
 #pragma once
 
 #include <memory>
-#include <vector>
 
 #include <gauxc/types.hpp>
 #include <gauxc/load_balancer.hpp>
@@ -73,8 +72,6 @@ public:
 
 
   exc_vxc_type eval_exc_vxc( const MatrixType& );
-
-  void set_ext_params( std::vector<double>& );
 
 
   const util::Timer& get_timings() const;
